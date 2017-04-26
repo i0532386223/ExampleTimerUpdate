@@ -8,16 +8,69 @@
 
 import UIKit
 import CoreData
+import Alamofire
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-
+    
+    var timer: Timer?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        timer = Timer.scheduledTimer(timeInterval: 4, target:self, selector: #selector(AppDelegate.update_data), userInfo: nil, repeats: true)
+
         return true
+    }
+    
+    func update_data()
+    {
+        Alamofire.request("https://time.is/Moscow").responseJSON { response in
+            if let contentType = response.response?.allHeaderFields["Expires"] as? String {
+                print("Date: \(contentType)")
+                let dataDict:[String: String] = ["date": contentType]
+                NotificationCenter.default.post(name: Notification.Name("update_new_date"), object: nil, userInfo: dataDict)
+            }
+        }
+    }
+    
+    func create_labels(view: UIView, text: String, show_buttons : Bool) -> (UILabel, UILabel, UIButton?, UIButton?)
+    {
+        let yy : CGFloat = 70
+        let header_label = UILabel(frame: CGRect(x: 0, y: yy, width: UIScreen.main.bounds.width, height: 40))
+        header_label.text = text
+        header_label.textAlignment = NSTextAlignment.center
+        header_label.backgroundColor = UIColor.green
+        view.addSubview(header_label)
+        let time_label = UILabel(frame: CGRect(x: 0, y: yy+40, width: UIScreen.main.bounds.width, height: 40))
+        time_label.layer.backgroundColor = UIColor.blue.cgColor
+        time_label.textAlignment = NSTextAlignment.center
+        time_label.textColor = UIColor.white
+        view.addSubview(time_label)
+        if (show_buttons)
+        {
+            let button1 = UIButton(frame: CGRect(x: 0, y: yy+80, width: UIScreen.main.bounds.width, height: 40))
+            button1.setTitle("Goto screen 1", for: UIControlState.normal)
+            button1.setTitleColor(UIColor.black, for: UIControlState.normal)
+            view.addSubview(button1)
+            let button2 = UIButton(frame: CGRect(x: 0, y: yy+120, width: UIScreen.main.bounds.width, height: 40))
+            button2.setTitle("Goto screen 2", for: UIControlState.normal)
+            button2.setTitleColor(UIColor.black, for: UIControlState.normal)
+            view.addSubview(button2)
+            return (header_label, time_label, button1, button2)
+        }
+        else
+        {
+            return (header_label, time_label, nil, nil)
+        }
+    }
+
+    func animate_update(view : UILabel)
+    {
+        view.layer.backgroundColor = UIColor.red.cgColor
+        UIView.animate(withDuration: 3.0, animations: {
+            view.layer.backgroundColor = UIColor.blue.cgColor
+        })
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
